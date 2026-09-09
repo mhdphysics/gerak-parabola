@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulasi Interaktif Gerak Parabola</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#657087;--accent:#2563eb;--accent2:#0ea5e9;--line:#dbe3ef}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}
+header{padding:22px 5%;background:linear-gradient(135deg,#1e3a8a,#2563eb 55%,#0ea5e9);color:white}
+header h1{margin:0 0 6px;font-size:clamp(24px,4vw,38px)}header p{margin:0;opacity:.92}
+main{max-width:1200px;margin:22px auto;padding:0 18px;display:grid;grid-template-columns:330px 1fr;gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 25px rgba(20,40,80,.07)}
+.controls{padding:18px}.controls h2,.results h2{margin:0 0 15px;font-size:19px}
+label{display:flex;justify-content:space-between;font-weight:700;margin-top:15px}
+input[type=range]{width:100%;accent-color:var(--accent);margin:10px 0}
+.value{color:var(--accent);font-variant-numeric:tabular-nums}
+select,input[type=number]{width:100%;padding:9px;border:1px solid var(--line);border-radius:9px}
+button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer}
+#start{background:var(--accent);color:white;flex:1}#reset{background:#e8eef8;color:#20304d;flex:1}
+.buttons{display:flex;gap:8px;margin-top:18px}.hint{font-size:12px;color:var(--muted);line-height:1.5;margin-top:13px}
+.sim{padding:12px}.canvasWrap{position:relative}.canvasWrap canvas{width:100%;display:block;border-radius:12px;background:#eef6ff}
+.legend{display:flex;gap:15px;flex-wrap:wrap;padding:10px 5px 2px;color:#56627a;font-size:13px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;background:#ef4444}.blue{background:#2563eb}.green{background:#16a34a}
+.results{grid-column:1/-1;padding:18px}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.metric{background:#f7faff;border:1px solid var(--line);border-radius:12px;padding:12px}.metric small{color:var(--muted)}.metric b{display:block;font-size:20px;margin-top:5px}
+.formula{margin-top:14px;padding:13px;background:#f0f6ff;border-left:4px solid var(--accent);border-radius:8px;font-family:Georgia,serif;line-height:1.7}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:0 18px 25px}
+@media(max-width:850px){main{grid-template-columns:1fr}.results{grid-column:auto}.grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+<h1>🚀 Simulasi Interaktif Gerak Parabola</h1>
+<p>Eksperimen virtual: ubah kecepatan awal, sudut elevasi, gravitasi, dan ketinggian awal.</p>
+</header>
+
+<main>
+<section class="card controls">
+<h2>⚙️ Parameter</h2>
+
+<label>Kecepatan awal <span class="value" id="vVal">20 m/s</span></label>
+<input id="v" type="range" min="5" max="40" step="1" value="20">
+
+<label>Sudut elevasi <span class="value" id="aVal">45°</span></label>
+<input id="a" type="range" min="5" max="85" step="1" value="45">
+
+<label>Gravitasi <span class="value" id="gVal">9,8 m/s²</span></label>
+<input id="g" type="range" min="1" max="20" step="0.1" value="9.8">
+
+<label>Ketinggian awal <span class="value" id="hVal">0 m</span></label>
+<input id="h" type="range" min="0" max="30" step="1" value="0">
+
+<label>Kecepatan animasi</label>
+<select id="speed">
+<option value="0.35">Lambat</option><option value="0.7" selected>Normal</option><option value="1.4">Cepat</option>
+</select>
+
+<div class="buttons"><button id="start">▶ Mulai</button><button id="reset">↻ Reset</button></div>
+<p class="hint">Amati bagaimana perubahan sudut dan kecepatan memengaruhi lintasan, tinggi maksimum, waktu terbang, dan jarak horizontal.</p>
+</section>
+
+<section class="card sim">
+<div class="canvasWrap"><canvas id="canvas" width="850" height="500"></canvas></div>
+<div class="legend">
+<span><i class="dot"></i>Benda</span><span><i class="dot blue"></i>Lintasan</span><span><i class="dot green"></i>Vektor kecepatan</span>
+</div>
+</section>
+
+<section class="card results">
+<h2>📊 Hasil Perhitungan</h2>
+<div class="grid">
+<div class="metric"><small>Waktu terbang</small><b id="tOut">—</b></div>
+<div class="metric"><small>Jarak horizontal</small><b id="xOut">—</b></div>
+<div class="metric"><small>Tinggi maksimum</small><b id="yOut">—</b></div>
+<div class="metric"><small>Waktu ke puncak</small><b id="tpOut">—</b></div>
+<div class="metric"><small>Kecepatan awal</small><b id="vOut">—</b></div>
+</div>
+<div class="formula">
+<b>Model fisika:</b><br>
+x(t) = v₀ cos(θ) · t &nbsp;&nbsp; | &nbsp;&nbsp;
+y(t) = h₀ + v₀ sin(θ) · t − ½gt²<br>
+Komponen kecepatan: vₓ = v₀ cos(θ), &nbsp; vᵧ = v₀ sin(θ) − gt
+</div>
+</section>
+</main>
+<footer>Model ideal: hambatan udara diabaikan.</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const canvas = $("canvas");
+const ctx = canvas.getContext("2d");
+
+let running = false;
+let paused = false;
+let t = 0;
+let lastTime = null;
+let animationId = null;
+
+function getParams() {
+  return {
+    v: Number($("v").value),
+    angle: Number($("a").value) * Math.PI / 180,
+    g: Number($("g").value),
+    h: Number($("h").value)
+  };
+}
+
+function calculate() {
+  const p = getParams();
+  const vx = p.v * Math.cos(p.angle);
+  const vy = p.v * Math.sin(p.angle);
+
+  // Waktu saat y = 0 (tanah)
+  const T = (vy + Math.sqrt(vy * vy + 2 * p.g * p.h)) / p.g;
+  const range = vx * T;
+  const tPeak = vy / p.g;
+  const maxHeight = p.h + (vy * vy) / (2 * p.g);
+
+  $("tOut").textContent = T.toFixed(2) + " s";
+  $("xOut").textContent = range.toFixed(2) + " m";
+  $("yOut").textContent = maxHeight.toFixed(2) + " m";
+  $("tpOut").textContent = tPeak.toFixed(2) + " s";
+  $("vOut").textContent = p.v.toFixed(1) + " m/s";
+
+  return { ...p, vx, vy, T, range, tPeak, maxHeight };
+}
+
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = Math.max(600, Math.floor(rect.width * ratio));
+  canvas.height = Math.max(400, Math.floor(500 * ratio));
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  draw();
+}
+
+function draw() {
+  const p = calculate();
+  const W = canvas.clientWidth;
+  const H = canvas.clientHeight;
+
+  ctx.clearRect(0, 0, W, H);
+
+  const left = 65, right = 25, top = 25, bottom = 50;
+  const usableW = W - left - right;
+  const usableH = H - top - bottom;
+
+  const maxX = Math.max(p.range * 1.12, 10);
+  const maxY = Math.max(p.maxHeight * 1.18, 10);
+  const scale = Math.min(usableW / maxX, usableH / maxY);
+
+  const ox = left;
+  const oy = H - bottom;
+
+  // Latar
+  ctx.fillStyle = "#eef6ff";
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = "#d7e3f0";
+  ctx.lineWidth = 1;
+  ctx.font = "12px Arial";
+  ctx.fillStyle = "#536176";
+
+  const xStep = maxX / 8;
+  const yStep = maxY / 6;
+
+  for (let x = 0; x <= maxX; x += xStep) {
+    const px = ox + x * scale;
+    ctx.beginPath();
+    ctx.moveTo(px, top);
+    ctx.lineTo(px, oy);
+    ctx.stroke();
+    ctx.fillText(x.toFixed(0), px - 8, oy + 18);
+  }
+
+  for (let y = 0; y <= maxY; y += yStep) {
+    const py = oy - y * scale;
+    ctx.beginPath();
+    ctx.moveTo(ox, py);
+    ctx.lineTo(W - right, py);
+    ctx.stroke();
+    ctx.fillText(y.toFixed(0), 25, py + 4);
+  }
+
+  // Sumbu
+  ctx.strokeStyle = "#26364d";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(ox, top);
+  ctx.lineTo(ox, oy);
+  ctx.lineTo(W - right, oy);
+  ctx.stroke();
+
+  ctx.font = "bold 13px Arial";
+  ctx.fillStyle = "#26364d";
+  ctx.fillText("y (m)", 20, top + 2);
+  ctx.fillText("x (m)", W - 55, oy + 38);
+
+  // Lintasan parabola
+  ctx.strokeStyle = "#2563eb";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+
+  const steps = 180;
+  for (let i = 0; i <= steps; i++) {
+    const tt = p.T * i / steps;
+    const x = p.vx * tt;
+    const y = p.h + p.vy * tt - 0.5 * p.g * tt * tt;
+    const px = ox + x * scale;
+    const py = oy - y * scale;
+
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // Posisi benda
+  const currentT = Math.min(Math.max(t, 0), p.T);
+  const x = p.vx * currentT;
+  const y = Math.max(0, p.h + p.vy * currentT - 0.5 * p.g * currentT * currentT);
+
+  const px = ox + x * scale;
+  const py = oy - y * scale;
+
+  // Jejak titik posisi
+  ctx.fillStyle = "#93c5fd";
+  for (let i = 0; i < 18; i++) {
+    const tt = Math.max(0, currentT - i * p.T / 80);
+    const xx = p.vx * tt;
+    const yy = Math.max(0, p.h + p.vy * tt - 0.5 * p.g * tt * tt);
+    ctx.beginPath();
+    ctx.arc(ox + xx * scale, oy - yy * scale, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Vektor kecepatan
+  const currentVy = p.vy - p.g * currentT;
+  const speed = Math.hypot(p.vx, currentVy);
+  const arrowLength = 48;
+
+  if (speed > 0.01) {
+    const ex = px + (p.vx / speed) * arrowLength;
+    const ey = py - (currentVy / speed) * arrowLength;
+
+    ctx.strokeStyle = "#16a34a";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.lineTo(ex, ey);
+    ctx.stroke();
+
+    const ang = Math.atan2(ey - py, ex - px);
+    ctx.beginPath();
+    ctx.moveTo(ex, ey);
+    ctx.lineTo(ex - 10 * Math.cos(ang - Math.PI / 6), ey - 10 * Math.sin(ang - Math.PI / 6));
+    ctx.lineTo(ex - 10 * Math.cos(ang + Math.PI / 6), ey - 10 * Math.sin(ang + Math.PI / 6));
+    ctx.closePath();
+    ctx.fillStyle = "#16a34a";
+    ctx.fill();
+  }
+
+  // Bola
+  ctx.shadowBlur = 10;
+  ctx.shadowColor = "rgba(239,68,68,.35)";
+  ctx.fillStyle = "#ef4444";
+  ctx.beginPath();
+  ctx.arc(px, py, 10, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Informasi waktu
+  ctx.fillStyle = "#172033";
+  ctx.font = "bold 14px Arial";
+  ctx.fillText("t = " + currentT.toFixed(2) + " s", px + 15, py - 15);
+}
+
+function animate(timestamp) {
+  if (!running) return;
+
+  if (lastTime === null) lastTime = timestamp;
+  const delta = (timestamp - lastTime) / 1000;
+  lastTime = timestamp;
+
+  const speedFactor = Number($("speed").value);
+  t += delta * speedFactor;
+
+  const result = calculate();
+
+  if (t >= result.T) {
+    t = result.T;
+    running = false;
+    $("start").textContent = "▶ Mulai Lagi";
+    $("status").textContent = "Selesai";
+  } else {
+    $("status").textContent = "Berjalan";
+  }
+
+  draw();
+
+  if (running) {
+    animationId = requestAnimationFrame(animate);
+  }
+}
+
+function startAnimation() {
+  if (running) return;
+
+  const result = calculate();
+
+  // Jika sudah mencapai akhir, mulai dari awal
+  if (t >= result.T || t < 0) t = 0;
+
+  running = true;
+  paused = false;
+  lastTime = null;
+  $("start").textContent = "⏸ Jeda";
+  $("status").textContent = "Berjalan";
+
+  animationId = requestAnimationFrame(animate);
+}
+
+function pauseAnimation() {
+  running = false;
+  paused = true;
+  lastTime = null;
+  $("start").textContent = "▶ Lanjut";
+  $("status").textContent = "Dijeda";
+  if (animationId) cancelAnimationFrame(animationId);
+}
+
+$("start").addEventListener("click", () => {
+  if (running) pauseAnimation();
+  else startAnimation();
+});
+
+$("reset").addEventListener("click", () => {
+  running = false;
+  paused = false;
+  t = 0;
+  lastTime = null;
+  if (animationId) cancelAnimationFrame(animationId);
+
+  $("v").value = 20;
+  $("a").value = 45;
+  $("g").value = 9.8;
+  $("h").value = 0;
+  $("speed").value = 0.7;
+
+  $("start").textContent = "▶ Mulai";
+  $("status").textContent = "Siap";
+  updateLabels();
+});
+
+function updateLabels() {
+  $("vVal").textContent = $("v").value + " m/s";
+  $("aVal").textContent = $("a").value + "°";
+  $("gVal").textContent = Number($("g").value).toFixed(1) + " m/s²";
+  $("hVal").textContent = $("h").value + " m";
+  calculate();
+  draw();
+}
+
+["v", "a", "g", "h", "speed"].forEach(id => {
+  $(id).addEventListener("input", updateLabels);
+});
+
+window.addEventListener("resize", resizeCanvas);
+
+// Tambahkan status animasi ke panel
+const statusEl = document.createElement("div");
+statusEl.id = "status";
+statusEl.textContent = "Siap";
+statusEl.style.cssText = "margin-top:10px;text-align:center;font-weight:bold;color:#2563eb;";
+$("start").parentElement.insertAdjacentElement("afterend", statusEl);
+
+resizeCanvas();
+updateLabels();
+</script>
+</body>
+</html>
